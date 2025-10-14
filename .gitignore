@@ -136,3 +136,10 @@ Thumbs.db
 *.local
 *.tmp
 *.temp
+
+# Deployment scripts (keep templates but ignore generated ones)
+deploy.sh
+deploy.bat
+
+# Vercel deployment files
+.vercel/
