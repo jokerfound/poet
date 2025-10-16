@@ -3,12 +3,16 @@ import { createPinia } from 'pinia'
 import router from './router'
 import App from './App.vue'
 import { initSupabase } from './config/supabase.js'
+import { initMCPServers } from './config/mcpServers.js'
 import { usePoemStore } from './stores/poemStore.js'
 
 import './assets/main.css'
 
 // 初始化Supabase数据库连接
 initSupabase()
+
+// 初始化MCP服务器
+initMCPServers()
 
 const app = createApp(App)
 

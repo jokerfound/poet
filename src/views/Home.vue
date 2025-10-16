@@ -54,7 +54,9 @@
     <section class="recommendations">
       <div class="container">
         <h2 class="section-title">今日推荐</h2>
-        <div class="grid grid-2">
+        <div v-if="loading" class="loading">加载中...</div>
+        <div v-else-if="error" class="error">{{ error }}</div>
+        <div v-else class="grid grid-2">
           <div class="poem-card" v-for="poem in recommendedPoems" :key="poem.id">
             <div class="poem-header">
               <h3 class="poem-title">{{ poem.title }}</h3>
@@ -103,59 +105,97 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, onMounted } from 'vue'
 import { usePoemStore } from '@/stores/poemStore'
+import staticPoemService from '@/services/staticPoemService'
 
 const poemStore = usePoemStore()
 
 // 推荐诗词数据
-const recommendedPoems = ref([
-  {
-    id: 1,
-    title: '静夜思',
-    author: '李白',
-    dynasty: '唐代',
-    content: '床前明月光，疑是地上霜。\n举头望明月，低头思故乡。'
-  },
-  {
-    id: 2,
-    title: '春晓',
-    author: '孟浩然',
-    dynasty: '唐代',
-    content: '春眠不觉晓，处处闻啼鸟。\n夜来风雨声，花落知多少。'
-  },
-  {
-    id: 3,
-    title: '登鹳雀楼',
-    author: '王之涣',
-    dynasty: '唐代',
-    content: '白日依山尽，黄河入海流。\n欲穷千里目，更上一层楼。'
-  },
-  {
-    id: 4,
-    title: '江雪',
-    author: '柳宗元',
-    dynasty: '唐代',
-    content: '千山鸟飞绝，万径人踪灭。\n孤舟蓑笠翁，独钓寒江雪。'
-  }
-])
-
-// 平台统计数据
+const recommendedPoems = ref([])
 const stats = ref({
-  totalPoems: '5000+',
-  totalPoets: '300+',
-  totalDynasties: '10+',
-  aiAnalyses: '10000+'
+  totalPoems: '加载中...',
+  totalPoets: '加载中...',
+  totalDynasties: '加载中...',
+  aiAnalyses: '加载中...'
 })
+const loading = ref(true)
+const error = ref(null)
+
+// 加载首页数据
+const loadHomeData = async () => {
+  try {
+    loading.value = true
+    error.value = null
+    
+    // 获取推荐诗词
+    const poems = await staticPoemService.getRecommendedPoems(4)
+    recommendedPoems.value = poems.map(poem => ({
+      id: poem.id,
+      title: poem.title,
+      author: poem.author || '未知',
+      dynasty: poem.dynasty,
+      content: poem.content
+    }))
+    
+    // 获取统计数据
+    const statsData = await staticPoemService.getPlatformStats()
+    const poets = await staticPoemService.getPoets(1)
+    
+    stats.value = statsData
+    
+  } catch (err) {
+    error.value = err.message
+    console.error('加载首页数据失败:', err)
+    
+    // 使用模拟数据作为降级方案
+    recommendedPoems.value = [
+      {
+        id: 1,
+        title: '静夜思',
+        author: '李白',
+        dynasty: '唐代',
+        content: '床前明月光，疑是地上霜。\n举头望明月，低头思故乡。'
+      },
+      {
+        id: 2,
+        title: '春晓',
+        author: '孟浩然',
+        dynasty: '唐代',
+        content: '春眠不觉晓，处处闻啼鸟。\n夜来风雨声，花落知多少。'
+      }
+    ]
+    
+    stats.value = {
+      totalPoems: '5000+',
+      totalPoets: '300+',
+      totalDynasties: '10+',
+      aiAnalyses: '10000+'
+    }
+  } finally {
+    loading.value = false
+  }
+}
 
 // 收藏功能
-const toggleFavorite = (poemId) => {
-  poemStore.toggleFavorite(poemId)
+const toggleFavorite = async (poemId) => {
+  try {
+    poemStore.toggleFavorite(poemId)
+    // 记录阅读行为
+    await staticPoemService.trackReading(poemId)
+  } catch (err) {
+    console.error('记录阅读行为失败:', err)
+  }
 }
 
 const isFavorite = (poemId) => {
   return poemStore.favorites.includes(poemId)
 }
+
+// 组件挂载时加载数据
+onMounted(() => {
+  loadHomeData()
+})
 </script>
 
 <style scoped>
@@ -291,6 +331,16 @@ const isFavorite = (poemId) => {
 .recommendations {
   padding: 4rem 0;
   background: #f8f9fa;
+}
+
+.loading, .error {
+  text-align: center;
+  padding: 2rem;
+  font-size: 1.2rem;
+}
+
+.error {
+  color: #e74c3c;
 }
 
 .poem-card {

@@ -7,7 +7,15 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "vercel-build": "chmod +x node_modules/.bin/vite && npm run build"
+    "vercel-build": "chmod +x node_modules/.bin/vite && npm run build",
+    "mcp:test": "node src/config/mcpServers.example.js",
+    "mcp:health": "node -e \"import('./src/config/mcpServers.js').then(m => m.getMCPServerManager().checkHealth().then(console.log))\"",
+    "supabase:test": "node supabase/test-connection.js",
+    "supabase:migrate": "node supabase/run-migrations.js",
+    "supabase:seed": "node supabase/seed-data.js",
+    "supabase:setup": "npm run supabase:migrate && npm run supabase:seed",
+    "github:sync": "bash sync-to-github.sh",
+    "github:sync:win": "sync-to-github.bat"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.75.0",
