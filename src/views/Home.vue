@@ -1,5 +1,7 @@
 <template>
   <div class="home">
+    <!-- AI聊天助手 -->
+    <AIChatAssistant />
     <!-- 英雄区域 -->
     <section class="hero">
       <div class="hero-content">
@@ -108,6 +110,7 @@
 import { ref, onMounted } from 'vue'
 import { usePoemStore } from '@/stores/poemStore'
 import staticPoemService from '@/services/staticPoemService'
+import AIChatAssistant from '@/components/AIChatAssistant.vue'
 
 const poemStore = usePoemStore()
 

@@ -1,0 +1,166 @@
+{
+  "name": "诗词赏析机器人工作流",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/poetry/analyze",
+        "responseMode": "onReceived"
+      },
+      "id": "webhook-1",
+      "name": "诗词分析Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { poemId, poemTitle, poemContent, analysisType, userQuestion } = $input.first().json;\n\n// 验证输入数据\nif (!poemContent && !poemId && !poemTitle) {\n  throw new Error('请提供诗词内容、ID或标题');\n}\n\n// 构建分析请求\nconst analysisRequest = {\n  poemId,\n  poemTitle,\n  poemContent,\n  analysisType: analysisType || 'comprehensive',\n  userQuestion,\n  timestamp: new Date().toISOString(),\n  requestId: Math.random().toString(36).substr(2, 9)\n};\n\nreturn [{\n  json: analysisRequest\n}];"
+      },
+      "id": "function-1",
+      "name": "请求验证和预处理",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-4"
+            },
+            {
+              "name": "messages",
+              "value": "=[\n  {\n    \"role\": \"system\",\n    \"content\": \"你是一位专业的古诗词赏析专家，擅长从情感、意境、艺术手法、历史背景等多个维度分析诗词。请用专业且通俗易懂的语言进行赏析。\"\n  },\n  {\n    \"role\": \"user\",\n    \"content\": \"={{ '请分析以下诗词：\\\\n\\\\n' + ( $('函数').first().json.poemContent || $('函数').first().json.poemTitle ) + '\\\\n\\\\n分析类型：' + $('函数').first().json.analysisType + ( $('函数').first().json.userQuestion ? '\\\\n用户问题：' + $('函数').first().json.userQuestion : '' ) }}\"\n  }\n]"
+            },
+            {
+              "name": "temperature",
+              "value": "0.7"
+            },
+            {
+              "name": "max_tokens",
+              "value": "2000"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "httpRequest-1",
+      "name": "调用OpenAI API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\n\nif (response.error) {\n  throw new Error(`OpenAI API调用失败: ${response.error.message}`);\n}\n\nconst analysis = response.choices[0].message.content;\n\n// 提取关键信息\nconst insights = analysis.split('。').filter(line => line.trim().length > 10).slice(0, 3);\n\nreturn [{\n  json: {\n    analysis,\n    insights,\n    recommendations: [\n      '建议结合诗人的生平经历理解',\n      '可以对比同时代的其他作品',\n      '关注诗词的韵律和节奏特点'\n    ],\n    relatedPoems: [\n      { id: 1, title: '春晓', author: '孟浩然', similarity: 0.85 },\n      { id: 2, title: '登鹳雀楼', author: '王之涣', similarity: 0.78 },\n      { id: 3, title: '望庐山瀑布', author: '李白', similarity: 0.72 }\n    ],\n    timestamp: new Date().toISOString(),\n    analysisId: Math.random().toString(36).substr(2, 9)\n  }\n}];"
+      },
+      "id": "function-2",
+      "name": "处理AI响应",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [840, 300]
+    },
+    {
+      "parameters": {
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "respondToWebhook-1",
+      "name": "返回分析结果",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1040, 300]
+    },
+    {
+      "parameters": {
+        "errorMessage": "诗词分析失败",
+        "continueOnFail": false
+      },
+      "id": "error-trigger-1",
+      "name": "错误处理",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [640, 480]
+    }
+  ],
+  "connections": {
+    "诗词分析Webhook": {
+      "main": [
+        [
+          {
+            "node": "请求验证和预处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "请求验证和预处理": {
+      "main": [
+        [
+          {
+            "node": "调用OpenAI API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "调用OpenAI API": {
+      "main": [
+        [
+          {
+            "node": "处理AI响应",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ],
+      "error": [
+        [
+          {
+            "node": "错误处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理AI响应": {
+      "main": [
+        [
+          {
+            "node": "返回分析结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

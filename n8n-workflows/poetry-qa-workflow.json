@@ -1,0 +1,146 @@
+{
+  "name": "诗词智能问答工作流",
+  "nodes": [
+    {
+      "parameters": {
+        "path": "/poetry/qa",
+        "responseMode": "onReceived"
+      },
+      "id": "webhook-1",
+      "name": "问答Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const { question, context, conversationId } = $input.first().json;\n\n// 验证问题\nif (!question || question.trim().length < 2) {\n  throw new Error('请提供有效的问题');\n}\n\n// 构建问答请求\nconst qaRequest = {\n  question: question.trim(),\n  context: context || {},\n  conversationId: conversationId || Math.random().toString(36).substr(2, 9),\n  timestamp: new Date().toISOString(),\n  requestId: Math.random().toString(36).substr(2, 9)\n};\n\nreturn [{\n  json: qaRequest\n}];"
+      },
+      "id": "function-1",
+      "name": "问题预处理",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [440, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $vars.OPENAI_API_URL || 'https://api.openai.com/v1/chat/completions' }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "openAiApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "model",
+              "value": "gpt-4"
+            },
+            {
+              "name": "messages",
+              "value": "=[\n  {\n    \"role\": \"system\",\n    \"content\": \"你是一位专业的古诗词专家，擅长解答关于诗词的各种问题，包括创作背景、艺术特色、情感表达、历史意义等。请用专业且通俗易懂的语言回答。\"\n  },\n  {\n    \"role\": \"user\",\n    \"content\": \"={{ $('函数').first().json.question }}\"\n  }\n]"
+            },
+            {
+              "name": "temperature",
+              "value": "0.7"
+            },
+            {
+              "name": "max_tokens",
+              "value": "1500"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "httpRequest-1",
+      "name": "调用AI问答API",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "const response = $input.first().json;\n\nif (response.error) {\n  throw new Error(`AI问答API调用失败: ${response.error.message}`);\n}\n\nconst answer = response.choices[0].message.content;\n\n// 分析回答质量\nconst answerQuality = answer.length > 100 ? 'high' : 'medium';\n\nreturn [{\n  json: {\n    answer,\n    answerQuality,\n    conversationId: $('函数').first().json.conversationId,\n    timestamp: new Date().toISOString(),\n    responseId: Math.random().toString(36).substr(2, 9),\n    suggestions: [\n      '您还可以了解这首诗的创作背景',\n      '可以对比诗人其他时期的作品',\n      '推荐阅读相关的赏析文章'\n    ]\n  }\n}];"
+      },
+      "id": "function-2",
+      "name": "处理回答",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [840, 300]
+    },
+    {
+      "parameters": {
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "respondToWebhook-1",
+      "name": "返回回答结果",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1040, 300]
+    }
+  ],
+  "connections": {
+    "问答Webhook": {
+      "main": [
+        [
+          {
+            "node": "问题预处理",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "问题预处理": {
+      "main": [
+        [
+          {
+            "node": "调用AI问答API",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "调用AI问答API": {
+      "main": [
+        [
+          {
+            "node": "处理回答",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "处理回答": {
+      "main": [
+        [
+          {
+            "node": "返回回答结果",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null,
+  "tags": [],
+  "triggerCount": 0,
+  "updatedAt": "2024-01-01T00:00:00.000Z",
+  "versionId": "1"
+}

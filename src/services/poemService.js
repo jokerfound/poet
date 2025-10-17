@@ -1,6 +1,6 @@
 // 诗词服务 - 提供诗词数据的获取和管理功能
 import { ref } from 'vue'
-import { api, handleSupabaseError } from '../supabase/config.js'
+import { api, handleSupabaseError } from '../../supabase/config.js'
 
 // 诗词服务类
 class PoemService {

@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: poet-n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_BASIC_AUTH_USER=admin
+      - N8N_BASIC_AUTH_PASSWORD=poet123456
+      - N8N_ENCRYPTION_KEY=poet-encryption-key-2024
+      - N8N_DIAGNOSTICS_ENABLED=false
+      - N8N_PUBLIC_API_DISABLED=false
+      - N8N_DEFAULT_LOCALE=zh-CN
+      - DB_TYPE=sqlite
+      - DB_SQLITE_VACUUM_ON_STARTUP=true
+    volumes:
+      - ./n8n-data:/home/node/.n8n
+      - ./n8n-workflows:/home/node/.n8n/workflows
+    networks:
+      - poet-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: poet-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./redis-data:/data
+    networks:
+      - poet-network
+
+networks:
+  poet-network:
+    driver: bridge
+
+volumes:
+  n8n-data:
+  redis-data:

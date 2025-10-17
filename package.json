@@ -1,32 +1,32 @@
 {
-  "name": "poetic-journey",
+  "name": "poet-app",
   "private": true,
   "version": "1.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vue-tsc && vite build",
     "preview": "vite preview",
-    "vercel-build": "chmod +x node_modules/.bin/vite && npm run build",
-    "mcp:test": "node src/config/mcpServers.example.js",
-    "mcp:health": "node -e \"import('./src/config/mcpServers.js').then(m => m.getMCPServerManager().checkHealth().then(console.log))\"",
-    "supabase:test": "node supabase/test-connection.js",
-    "supabase:migrate": "node supabase/run-migrations.js",
-    "supabase:seed": "node supabase/seed-data.js",
-    "supabase:setup": "npm run supabase:migrate && npm run supabase:seed",
-    "github:sync": "bash sync-to-github.sh",
-    "github:sync:win": "sync-to-github.bat"
+    "deploy:n8n": "chmod +x deploy-n8n.sh && ./deploy-n8n.sh",
+    "start:n8n": "docker-compose -f docker-compose.n8n.yml up -d",
+    "stop:n8n": "docker-compose -f docker-compose.n8n.yml down",
+    "logs:n8n": "docker logs poet-n8n -f"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.75.0",
-    "@vueuse/core": "^10.3.0",
-    "axios": "^1.5.0",
-    "pinia": "^2.1.6",
-    "vue": "^3.3.4",
-    "vue-router": "^4.2.4"
+    "pinia": "^2.1.7",
+    "vue": "^3.4.21",
+    "vue-router": "^4.3.0",
+    "vue-demi": "^0.14.6",
+    "@supabase/supabase-js": "^2.39.7",
+    "axios": "^1.6.7"
   },
   "devDependencies": {
-    "@vitejs/plugin-vue": "^4.3.4",
-    "vite": "^4.4.9"
+    "@vitejs/plugin-vue": "^5.0.5",
+    "typescript": "^5.2.0",
+    "vue-tsc": "^1.8.25",
+    "vite": "^5.2.0"
   }
 }

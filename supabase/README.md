@@ -134,11 +134,11 @@ supabase db push
 在浏览器控制台检查：
 ```javascript
 // 测试连接
-import { checkConnection } from './supabase/config.js'
+import { checkConnection } from './config.js'
 checkConnection().then(console.log)
 
 // 测试API
-import { api } from './supabase/config.js'
+import { api } from './config.js'
 api.getPoems().then(console.log)
 ```
 

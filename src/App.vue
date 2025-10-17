@@ -36,11 +36,19 @@
         <p>传承中华文化，品味诗词之美</p>
       </div>
     </footer>
+
+    <!-- AI聊天助手 -->
+    <AIChatAssistant />
+    
+    <!-- 诗词赏析机器人 -->
+    <PoetryAnalysisBot />
   </div>
 </template>
 
 <script setup>
 import { useRoute } from 'vue-router'
+import AIChatAssistant from '@/components/AIChatAssistant.vue'
+import PoetryAnalysisBot from '@/components/PoetryAnalysisBot.vue'
 
 const route = useRoute()
 </script>
